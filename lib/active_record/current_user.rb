@@ -1,45 +1,45 @@
-module Stakr #:nodoc:
-  module CurrentAuthor #:nodoc:
+module ActiveRecord
+  
+  # TODO
+  module CurrentUser
     
-    # TODO
-    module Model
+    def self.included(base) #:nodoc:
+      base.alias_method_chain :touch,  :current_user
+      base.alias_method_chain :create, :current_user
+      base.alias_method_chain :update, :current_user
       
-      def self.included(base) #:nodoc:
-        base.alias_method_chain :touch,  :current_author
-        base.alias_method_chain :create, :current_author
-        base.alias_method_chain :update, :current_author
-        
-        base.class_inheritable_accessor :record_current_author, :instance_writer => false
-        base.record_current_author = true
-      end
-      
-      private
-        
-        def touch_with_current_author(attribute = nil) #:nodoc:
-          if attribute
-            send("#{attribute}=", Author.current) if Author.current
-          else
-            self.updator = Author.current if respond_to?(:updator) && Author.current
-          end
-          touch_without_current_author(attribute)
-        end
-        
-        def create_with_current_author #:nodoc:
-          if record_current_author
-            self.creator = Author.current if respond_to?(:creator) && creator.nil? && Author.current
-            self.updator = Author.current if respond_to?(:updator) && updator.nil? && Author.current
-          end
-          create_without_current_author
-        end
-        
-        def update_with_current_author(*args) #:nodoc:
-          if record_current_author && (!partial_updates? || changed?)
-            self.updator = Author.current if respond_to?(:updator) && Author.current
-          end
-          update_without_current_author(*args)
-        end
-        
+      base.class_inheritable_accessor :current_user_class_name, :instance_writer => false
+      base.current_user_class_name = 'User'
     end
     
+    private
+      
+      def touch_with_current_user(timestamp_attribute = nil, current_user_attribute = nil) #:nodoc:
+        if current_user_class_name && (current = current_user_class_name.constantize.current)
+          if current_user_attribute
+            send("#{attribute}=", current)
+          else
+            self.updator = current if respond_to?(:updator)
+          end
+        end
+        touch_without_current_user(timestamp_attribute)
+      end
+      
+      def create_with_current_user #:nodoc:
+        if current_user_class_name && (current = current_user_class_name.constantize.current)
+          self.creator = current if respond_to?(:creator) && creator.nil?
+          self.updator = current if respond_to?(:updator) && updator.nil?
+        end
+        create_without_current_user
+      end
+      
+      def update_with_current_user(*args) #:nodoc:
+        if current_user_class_name && (current = current_user_class_name.constantize.current) && (!partial_updates? || changed?)
+          self.updator = current if respond_to?(:updator)
+        end
+        update_without_current_user(*args)
+      end
+      
   end
+  
 end

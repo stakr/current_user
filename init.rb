@@ -1,5 +1,5 @@
-require 'stakr/current_author/model'
+require 'active_record/current_user'
 
-::ActiveRecord::Base.class_eval do
-  include ::Stakr::CurrentAuthor::Model
+ActiveRecord::Base.class_eval do
+  include ActiveRecord::CurrentUser
 end
